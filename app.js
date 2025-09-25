@@ -76,6 +76,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 fetch(aqiUrl)
             ]);
 
+            if([weatherResponse, forecastResponse, aqiResponse].some(res => !res.ok)){
+                throw new Error("Failed to fetch the data.");
+            }
+
+            const forecastData = await forecastResponse.json();
+            const weatherData = await weatherResponse.json();
+            const aqiData = await aqiResponse.json();
+
+
         } catch (error) {
             console.error("Error while fetching the data: ", error);
             showError(error.message);
@@ -83,6 +92,21 @@ document.addEventListener("DOMContentLoaded", () => {
             hideLoading();
         }
     };
+
+    const updateUI = (weatherContent,forecastContainer,aqi) => {
+        let weatherConditionForBg = weather.weather[0].main;
+        if(weatherConditionForBg === "Clouds" && weather.Clouds.all<20){
+            weatherConditionForBg = "Clear";
+        }
+
+    };
+
+    //for displaying the current time.
+    const updateClock = (timezoneOffset) => {
+        const now = new Data();
+        const utc = now.getTime() + (now.getTimeOffset() * 60000);
+    };
+
 
     //for displaying loading state.
     const showLoading = () => {

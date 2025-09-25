@@ -22,6 +22,7 @@ body{
     overflow: hidden;
 }
 
+/*For creating blurred effect.*/
 .backdrop-blur-xl{
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
