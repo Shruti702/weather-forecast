@@ -19,6 +19,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentWeatherDescEl = document.getElementById('current-weather-desc');
     const currentWeatherIconEl = document.getElementById('current-weather-icon');
     const forecastContainer = document.getElementById('forecast-container');
+    const sunriseTimeEl = document.getElementById('sunrise-time');
+    const sunsetTimeEl = document.getElementById('sunset-time');
+    const humidityEl = document.getElementById('humidity');
+    const windSpeedEl = document.getElementById('wind-speed');
+    const feelsLikeEl = document.getElementById('feels-like');
+    const pressureEl = document.getElementById('pressure');
+    const visibilityEl = document.getElementById('visibility');
+    const airQualityEl = document.getElementById('air-quality');
+    const healthRecommendationEl = document.getElementById('health-recommentdation');
 
 
     //all kinds of weather images for daytime.
@@ -116,6 +125,57 @@ document.addEventListener("DOMContentLoaded", () => {
         currentWeatherDescEl.textContent = weather.weather[0].description;
 
         const formatTime = (timestamp) => new Date(timestamp * 1000).toLocaleTimeString("en-us", {hour:"2-digit", minute:"2-digit", hour12:true, timeZone:"UTC"});
+        sunriseTimeEl.textContent = formatTime(weather.sys.sunrise + weather.timezone);
+        sunsetTimeEl.textContent = formatTime(weather.sys.sunset + weather.timezone);
+
+        humidityEl.textContent = `${weather.main.humidity} %`;
+        windSpeedEl.textContent = `${(weather.wind.speed * 3.6).toFixed(1)} km/hr`;
+        feelsLikeEl.textContent = `${Math.round(weather.main.feel_like)}°`;
+        pressureEl.textContent = `${weather.main.pressure} hPa`;
+        visibilityEl.textContent = `${(weather.visibility / 1000).toFixed(1)} km`;
+
+        const aqiValue = aqi.list[0].main.aqi;
+        const aqiInfo = getAqiInfo(aqiValue);
+        airQualityEl.textContent = aqiInfo.text;
+        airQualityEl.className = `font-bold px-3 py-1 rounded-full text-sm ${aqiInfo.color}`;
+        healthRecommendationEl.innerHTML = `<p class="text-gray-200 text-sm">${aqiInfo.recommendation}</p>`;
+
+    };
+
+    //for air quality index.
+    const getAquiInfo = (aqi) => {
+        switch(aqi){
+            case 1: return{
+                text:"Good",
+                color:"bg-green-500 text-white",
+                recommendation:"Air Quality is great."
+            };
+            case 2: return{
+                text:"Fair",
+                color:"bg-yellow-500 text-black",
+                recommendation:"Air Quality is acceptable."
+            };
+            case 3: return{
+                text:"Moderate",
+                color:"bg-orange-500 text-white",
+                recommendation:"Sensitive groups may experience health issues."
+            };
+            case 4: return{
+                text:"Poor",
+                color:"bg-red-500 text-white",
+                recommendation:"Everyone may experience health issues."
+            };
+            case 5: return{
+                text:"Very Poor",
+                color:"bg-purple-700 text-white",
+                recommendation:"Health alert: air quality can lead serious health issues."
+            };
+            default: return{
+                text:"Unknown",
+                color:"bg-gray-500 text-white",
+                recommendation:"Air Quality data is unavailable."
+            };
+        }
     };
 
     //for displaying the current time.
