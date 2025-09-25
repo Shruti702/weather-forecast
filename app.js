@@ -98,13 +98,32 @@ document.addEventListener("DOMContentLoaded", () => {
         if(weatherConditionForBg === "Clouds" && weather.Clouds.all<20){
             weatherConditionForBg = "Clear";
         }
+        updateClock(weather.timezone);
+        clockInterval = setInterval(() => updateClock(weather.timezone), 1000);
 
+        const currentTimeUTC = weather.dt;
+        const sunriseUTC = weather.sys.sunrise;
+        const sunsetUTC = weather.sys.sunset;
+        const isNight = (currentTimeUTC < sunriseUTC || currentTimeUTC > sunsetUTC);
+        const backgroundSet = isNight? backgroundNight : backgroundDay;
+        document.body.style,backgroundImage = `url('${backgroundSet[weatherConditionForBg] || backgroundSet.Default}')`;
+
+        currentWeatherIconEl.src = `https://openweathermap.org/img/wn/${weather.weather[0].icon}@4x.png`; 
+        cityNameEl.textContent = `${weather.name}, ${weather.sys.country}`;
+        const localDate = new Date((weather.dt + weather.timezone) * 1000);
+        currentDateEl.textContent = localDate.toLocaleDateString("en-us", {weekday:"long", month:"long", day:"numeric", timeZone:"UTC"});
+        currentTempEl = `${Math.round(weather.main.temp)}°`;
+        currentWeatherDescEl.textContent = weather.weather[0].description;
+
+        const formatTime = (timestamp) => new Date(timestamp * 1000).toLocaleTimeString("en-us", {hour:"2-digit", minute:"2-digit", hour12:true, timeZone:"UTC"});
     };
 
     //for displaying the current time.
     const updateClock = (timezoneOffset) => {
         const now = new Data();
         const utc = now.getTime() + (now.getTimeOffset() * 60000);
+        const localTime = new Date(utc + timezoneOffset * 1000);
+        currentTempEl.textContent = localTime.toLocaleTimeString("en-US", {hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:true});
     };
 
 
@@ -121,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
         weatherContent.classList.remove("opacity-0");
     };
 
-    //for dispalying the error message.
+    //for displaying the error message.
     const showError = (message) => {
         errorMessageEl.textContent = message;
         errorModal.classList.remove("hidden");
