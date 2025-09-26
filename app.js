@@ -1,6 +1,10 @@
+const { createElement } = require("react");
+
 document.addEventListener("DOMContentLoaded", () => {
     
+    /*API fetched from OpenWeatherMap.com.*/ 
     const wapik = "a632b1ff36f968d65d1485823b62c3da";
+
     let clockInterval = null;
     const loadingOverlay = document.getElementById("loading-overlay");
     const weatherContent = document.getElementById("weather-content");
@@ -54,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
         Default:"https://images.unsplash.com/photo-1630959049903-f1742bcd27d8?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MzJ8fG5pZ2h0JTIwd2VhdGhlcnxlbnwwfHwwfHx8MA%3D%3D",
     };
 
-    //fetching weather data from the API.
+    // Asynchronous function to retrieve all necessary weather data (Current, Forecast, and Air Quality).
     const fetchWeather = async ({lat, lon, city}) => {
         showLoading();
         if(clearInterval) clearInterval
@@ -74,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 longitude = geoData[0].lon;
             }
 
-            //fetching data for weather, 5-day forecast & air quality.  
+            //Fetching all three data sources concurrently. 
             const forecastUrl = `api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${wapik}`;
             const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${wapik}`;
             const aqiUrl = `http://api.openweathermap.org/data/2.5/air_pollution?lat=${latitude}&lon=${longitude}&appid=${wapik}`;
@@ -103,6 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    //Takes the raw API data and manipulates the DOM elements to display it.
     const updateUI = (weatherContent,forecastContainer,aqi) => {
         let weatherConditionForBg = weather.weather[0].main;
         if(weatherConditionForBg === "Clouds" && weather.Clouds.all<20){
@@ -111,6 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateClock(weather.timezone);
         clockInterval = setInterval(() => updateClock(weather.timezone), 1000);
 
+        //Sunrise/Sunset Time Formatting.
         const currentTimeUTC = weather.dt;
         const sunriseUTC = weather.sys.sunrise;
         const sunsetUTC = weather.sys.sunset;
@@ -135,12 +141,14 @@ document.addEventListener("DOMContentLoaded", () => {
         pressureEl.textContent = `${weather.main.pressure} hPa`;
         visibilityEl.textContent = `${(weather.visibility / 1000).toFixed(1)} km`;
 
+        // air quality update and styling.
         const aqiValue = aqi.list[0].main.aqi;
         const aqiInfo = getAqiInfo(aqiValue);
         airQualityEl.textContent = aqiInfo.text;
         airQualityEl.className = `font-bold px-3 py-1 rounded-full text-sm ${aqiInfo.color}`;
         healthRecommendationEl.innerHTML = `<p class="text-gray-200 text-sm">${aqiInfo.recommendation}</p>`;
 
+        // 5-Day forecast rendering.
         const dailyForcasts = processForeCast(forecast.list);
         forecastContainer.innerHTML = "";
         dailyForcasts.forEach(day => {
@@ -198,7 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    //for air quality index.
+    //for the information regarding air quality.
     const getAqiInfo = (aqi) => {
         switch(aqi){
             case 1: return{
@@ -263,6 +271,52 @@ document.addEventListener("DOMContentLoaded", () => {
         return processed.slice(0, 5);
     };
 
+    //d
+    const debounce = (func, delay) => {
+        let timeout;
+        return(...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this.args.delay));
+        }
+    };
+
+    const handleCityInput = async (event) => {
+        const query = event.target.value;
+        if(query.length < 3){
+            suggestionsBox.classList.add("hidden");
+            return;
+        }
+
+        try {
+            const geoUrl = `http://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${wapik}`;
+            const response = await fetch(geoUrl);
+            if(!response) 
+                return;
+            const cities = await response.json();
+
+            suggestionsBox.innerHTML = "";
+            if(cities.length > 0){
+                suggestionsBox.classList.remove("hidden");
+                cities.forEach(city => {
+                    const div = document.createElement("div");
+                    div.className = "p-3 hover:bg-white/10 cursor-pointer";
+                    div.textContent = `${city.name}, ${city.state ? city.state + "," : " "}, ${city.country}`;
+                    div.onclick = () => {
+                        cityInput.value = city.name;
+                        suggestionsBox.classList.add("hidden");
+                        fetchWeather({lat:city.lat, lon:city.lon});
+                    };
+                    suggestionsBox.appendChild("div");
+                });
+            }
+            else {
+                suggestionsBox.classList.add("hidden");
+            }
+        } catch (error) {
+            console.error("error in fetching:", error);
+        }
+    };
+
     //for displaying the current time.
     const updateClock = (timezoneOffset) => {
         const now = new Data();
@@ -290,4 +344,16 @@ document.addEventListener("DOMContentLoaded", () => {
         errorMessageEl.textContent = message;
         errorModal.classList.remove("hidden");
     };
+
+    //functionality for search.
+    searchForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const city = cityInput.value.trim();
+        if(city)
+            fetchWeather({city});
+        suggestionsBox.classList.add("hidden");
+        cityInput.value = "";
+    });
+
+    city.addEventListener("input", debounce(handleCityInput, 300));
 });
