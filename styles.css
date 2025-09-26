@@ -42,3 +42,59 @@ body{
     transform: translateY(-5px);
     box-shadow: 0 12px 24px rgba(0, 0, 0, .25);
 }
+
+.modal-bg{
+    background-color: rgba(0, 0, 0, .7);
+}
+
+/*Adding styling to star, rain and snow animations.*/
+.star{
+    position: absolute;
+    background-color: white;
+    border-radius: 50%;
+    animation: shooting-star-animation 5s linear infinite;
+}
+
+@keyframes shooting-star-animation{
+    from{
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+    to{
+        transform: translate(-500px, -500px);
+        opacity: 0;
+    }
+}
+
+.rain-drop{
+    position: absolute;
+    bottom: 100%;
+    width: 2px;
+    height: 40px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, .04));
+    animation: rain-animation 1s linear infinite;
+}
+
+@keyframes rain-animation{
+    to{
+        transform: translateY(100vh);
+    }
+}
+
+.snowFlake{
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    animation: fall linear infinite;
+}
+
+@keyframes fall{
+    from{
+        transform: translateY(-10vh) translateX(0);
+    }
+    to{
+        transform: translateY(110vh) translateX(20px);
+    }
+}
