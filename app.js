@@ -1,5 +1,3 @@
-const { createElement } = require("react");
-
 document.addEventListener("DOMContentLoaded", () => {
     
     /*API fetched from OpenWeatherMap.com.*/ 
@@ -31,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const pressureEl = document.getElementById('pressure');
     const visibilityEl = document.getElementById('visibility');
     const airQualityEl = document.getElementById('air-quality');
-    const healthRecommendationEl = document.getElementById('health-recommentdation');
+    const healthRecommendationEl = document.getElementById('health-recommendation');
 
 
     //all kinds of weather images for daytime.
@@ -61,40 +59,38 @@ document.addEventListener("DOMContentLoaded", () => {
     // Asynchronous function to retrieve all necessary weather data (Current, Forecast, and Air Quality).
     const fetchWeather = async ({lat, lon, city}) => {
         showLoading();
-        if(clearInterval) clearInterval
-        (clockInterval);
-        //for handling API errors.
+        clearInterval(clockInterval);
+        
         try {
             if(!wapik) throw new Error ("API key is missing");
             let latitude = lat;
             let longitude = lon;
             if(city){
-                const geoUrl = `http://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${wapik}`;
+                const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${wapik}`;
                 const getResponse = await fetch(geoUrl);
-                if(!getResponse) throw new Error("Could not fetch data.");
+                if(!getResponse.ok) throw new Error("Could not fetch geolocation data.");
                 const geoData = await getResponse.json();
-                if(geoData.length === 0) throw new Error ("No data available.");
+                if(geoData.length === 0) throw new Error ("City not found.");
                 latitude = geoData[0].lat;
                 longitude = geoData[0].lon;
             }
 
-            //Fetching all three data sources concurrently. 
-            const forecastUrl = `api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${wapik}`;
-            const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${wapik}`;
-            const aqiUrl = `http://api.openweathermap.org/data/2.5/air_pollution?lat=${latitude}&lon=${longitude}&appid=${wapik}`;
+            const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${wapik}&units=metric`;
+            const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${wapik}&units=metric`;
+            const aqiUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${latitude}&lon=${longitude}&appid=${wapik}`;
 
             const [weatherResponse, forecastResponse, aqiResponse] = await Promise.all([
-                fetch(forecastUrl),
                 fetch(weatherUrl),
+                fetch(forecastUrl),
                 fetch(aqiUrl)
             ]);
 
             if([weatherResponse, forecastResponse, aqiResponse].some(res => !res.ok)){
-                throw new Error("Failed to fetch the data.");
+                throw new Error("Failed to fetch one or more weather data sources.");
             }
 
-            const forecastData = await forecastResponse.json();
             const weatherData = await weatherResponse.json();
+            const forecastData = await forecastResponse.json();
             const aqiData = await aqiResponse.json();
 
             updateUI(weatherData, forecastData, aqiData);
@@ -108,9 +104,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     //Takes the raw API data and manipulates the DOM elements to display it.
-    const updateUI = (weatherContent,forecastContainer,aqi) => {
+    const updateUI = (weather, forecast, aqi) => {
         let weatherConditionForBg = weather.weather[0].main;
-        if(weatherConditionForBg === "Clouds" && weather.Clouds.all<20){
+        if(weatherConditionForBg === "Clouds" && weather.clouds.all < 20){
             weatherConditionForBg = "Clear";
         }
         updateClock(weather.timezone);
@@ -121,23 +117,23 @@ document.addEventListener("DOMContentLoaded", () => {
         const sunriseUTC = weather.sys.sunrise;
         const sunsetUTC = weather.sys.sunset;
         const isNight = (currentTimeUTC < sunriseUTC || currentTimeUTC > sunsetUTC);
-        const backgroundSet = isNight? backgroundNight : backgroundDay;
-        document.body.style,backgroundImage = `url('${backgroundSet[weatherConditionForBg] || backgroundSet.Default}')`;
+        const backgroundSet = isNight ? backgroundNight : backgroundDay;
+        document.body.style.backgroundImage = `url('${backgroundSet[weatherConditionForBg] || backgroundSet.Default}')`;
 
         currentWeatherIconEl.src = `https://openweathermap.org/img/wn/${weather.weather[0].icon}@4x.png`; 
         cityNameEl.textContent = `${weather.name}, ${weather.sys.country}`;
         const localDate = new Date((weather.dt + weather.timezone) * 1000);
         currentDateEl.textContent = localDate.toLocaleDateString("en-us", {weekday:"long", month:"long", day:"numeric", timeZone:"UTC"});
-        currentTempEl = `${Math.round(weather.main.temp)}°`;
+        currentTempEl.textContent = `${Math.round(weather.main.temp)}°`;
         currentWeatherDescEl.textContent = weather.weather[0].description;
 
-        const formatTime = (timestamp) => new Date(timestamp * 1000).toLocaleTimeString("en-us", {hour:"2-digit", minute:"2-digit", hour12:true, timeZone:"UTC"});
-        sunriseTimeEl.textContent = formatTime(weather.sys.sunrise + weather.timezone);
-        sunsetTimeEl.textContent = formatTime(weather.sys.sunset + weather.timezone);
+        const formatTime = (timestamp) => new Date((timestamp + weather.timezone) * 1000).toLocaleTimeString("en-us", {hour:"2-digit", minute:"2-digit", hour12:true, timeZone:"UTC"});
+        sunriseTimeEl.textContent = formatTime(weather.sys.sunrise);
+        sunsetTimeEl.textContent = formatTime(weather.sys.sunset);
 
         humidityEl.textContent = `${weather.main.humidity} %`;
         windSpeedEl.textContent = `${(weather.wind.speed * 3.6).toFixed(1)} km/hr`;
-        feelsLikeEl.textContent = `${Math.round(weather.main.feel_like)}°`;
+        feelsLikeEl.textContent = `${Math.round(weather.main.feels_like)}°`;
         pressureEl.textContent = `${weather.main.pressure} hPa`;
         visibilityEl.textContent = `${(weather.visibility / 1000).toFixed(1)} km`;
 
@@ -156,12 +152,12 @@ document.addEventListener("DOMContentLoaded", () => {
             card.className = `p-4 rounded-2xl text-center card backdrop-blur-xl`;
             card.innerHTML = `
               <p class="font-bold text-lg">${new Date(day.dt_txt).toLocaleDateString("en-us", {weekday:"short"})}</p>
-              <img src="https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png" alt="${day.weather[0].description} class="w-16 h-16 mx-auto">
-              <p class="font-semibold">${Math.round(day.main.temps_max)}°/${Math.round(day.main.temps_min)}°</p>
+              <img src="https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png" alt="${day.weather[0].description}" class="w-16 h-16 mx-auto">
+              <p class="font-semibold">${Math.round(day.main.temp_max)}°/${Math.round(day.main.temp_min)}°</p>
             `;
             forecastContainer.appendChild(card);
-            updateNightAnimation(isNight, weatherConditionForBg);
         });
+        updateNightAnimation(isNight, weatherConditionForBg);
     };
 
     //For the animation of night-time.
@@ -248,35 +244,35 @@ document.addEventListener("DOMContentLoaded", () => {
         forecastList.forEach(entry => {
             const date = entry.dt_txt.split(' ')[0];
             if(!dailyData[date]){
-                dailyData[date] = { temps_max: [], temps_min: [], icons: {}, entry:null};
+                dailyData[date] = { temp_max: [], temp_min: [], icons: {}, entry: null};
             }
-            dailyData[date].temps_max.push(entry.main.temps_max);
-            dailyData[date].temps_max.push(entry.main.temps_min);
+            dailyData[date].temp_max.push(entry.main.temp_max);
+            dailyData[date].temp_min.push(entry.main.temp_min);
             const icon = entry.weather[0].icon;
-            dailyData[date].icons = (dailyData[date].icons[icon] || 0);
-            if(dailyData[date].entry || entry.dt_txt.includes("12:00:00")){
+            dailyData[date].icons[icon] = (dailyData[date].icons[icon] || 0) + 1;
+            if(!dailyData[date].entry || entry.dt_txt.includes("12:00:00")){
                 dailyData[date].entry = entry;
             }
         });
 
         const processed = [];
-        for(const data in dailyData){
+        for(const date in dailyData){
             const day = dailyData[date];
-            const mostCommonIcon = Objects.keys(days.icons.reduce((a,b) => days.icon[a] > day.icons[b]? a : b));
+            const mostCommonIcon = Object.keys(day.icons).reduce((a, b) => day.icons[a] > day.icons[b] ? a : b);
             day.entry.weather[0].icon = mostCommonIcon;
-            day.entry.main.temps_max = Math.max(...day.temps_max);
-            day.entry.main.temps_min = Math.max(...day.temps_min);
+            day.entry.main.temp_max = Math.max(...day.temp_max);
+            day.entry.main.temp_min = Math.min(...day.temp_min);
             processed.push(day.entry);
         }
         return processed.slice(0, 5);
     };
 
-    //d
+    //debouncing for search input
     const debounce = (func, delay) => {
         let timeout;
         return(...args) => {
             clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this.args.delay));
+            timeout = setTimeout(() => func.apply(this, args), delay); 
         }
     };
 
@@ -288,10 +284,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const geoUrl = `http://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${wapik}`;
+            const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${wapik}`;
             const response = await fetch(geoUrl);
-            if(!response) 
-                return;
+            if(!response.ok) return;
             const cities = await response.json();
 
             suggestionsBox.innerHTML = "";
@@ -300,29 +295,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 cities.forEach(city => {
                     const div = document.createElement("div");
                     div.className = "p-3 hover:bg-white/10 cursor-pointer";
-                    div.textContent = `${city.name}, ${city.state ? city.state + "," : " "}, ${city.country}`;
+                    div.textContent = `${city.name}, ${city.state ? city.state + "," : ""} ${city.country}`;
                     div.onclick = () => {
                         cityInput.value = city.name;
                         suggestionsBox.classList.add("hidden");
                         fetchWeather({lat:city.lat, lon:city.lon});
                     };
-                    suggestionsBox.appendChild("div");
+                    suggestionsBox.appendChild(div);
                 });
             }
             else {
                 suggestionsBox.classList.add("hidden");
             }
         } catch (error) {
-            console.error("error in fetching:", error);
+            console.error("error in fetching city suggestions:", error);
         }
     };
 
     //for displaying the current time.
     const updateClock = (timezoneOffset) => {
-        const now = new Data();
-        const utc = now.getTime() + (now.getTimeOffset() * 60000);
-        const localTime = new Date(utc + timezoneOffset * 1000);
-        currentTempEl.textContent = localTime.toLocaleTimeString("en-US", {hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:true});
+        const now = new Date(); 
+        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+        const localTime = new Date(utc + (timezoneOffset * 1000)); 
+        // Corrected: Removed the timeZone: "UTC" option
+        currentTimeEl.textContent = localTime.toLocaleTimeString("en-US", {hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:true});
     };
 
 
@@ -355,5 +351,34 @@ document.addEventListener("DOMContentLoaded", () => {
         cityInput.value = "";
     });
 
-    city.addEventListener("input", debounce(handleCityInput, 300));
+    const debouncedHandleCityInput = debounce(handleCityInput, 300);
+    cityInput.addEventListener("input", debouncedHandleCityInput);
+
+    document.addEventListener("click", (e) => {
+        if(!searchForm.contains(e.target)){
+            suggestionsBox.classList.add("hidden");
+        }
+    });
+
+    geolocationBtn.addEventListener("click", () => {
+        if(navigator.geolocation){
+            navigator.geolocation.getCurrentPosition(
+                (position) => fetchWeather({lat:position.coords.latitude, lon:position.coords.longitude}), 
+                () => {
+                    console.log("Geolocation permission denied or unavailable. Fetching default city.");
+                    fetchWeather({city: "New Delhi"});
+                },
+                {enableHighAccuracy:true, timeout:10000, maximumAge:0}
+            );
+        }
+        else{
+            console.log("Geolocation is not supported by this browser.");
+            fetchWeather({city: "New Delhi"});
+        }
+    });
+
+    closeModalBtn.addEventListener("click", () => errorModal.classList.add("hidden"));
+    
+    // Initial fetch on page load
+    geolocationBtn.click();
 });
