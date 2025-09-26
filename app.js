@@ -152,10 +152,51 @@ document.addEventListener("DOMContentLoaded", () => {
               <p class="font-semibold">${Math.round(day.main.temps_max)}°/${Math.round(day.main.temps_min)}°</p>
             `;
             forecastContainer.appendChild(card);
+            updateNightAnimation(isNight, weatherConditionForBg);
         });
     };
 
-    
+    //For the animation of night-time.
+    const updateNightAnimation = (isNight, condition) => {
+        animationContainer.innerHTML = "";
+        if(!isNight) 
+            return;
+
+        if(condition === "Clear"){
+            for(let i = 0; i<20; i++){
+                const star = document.createElement("div");
+                star.className = "star";
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.width = `${Math.random() * 2 + 1}px`;
+                star.style.height = star.style.width;
+                star.style.animationDelay = `${Math.random() * 5}s`;
+                star.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                animationContainer.appendChild(star);
+            }
+        }
+        else if(condition === "Rain" || condition === "Drizzle"){
+            for(let i = 0; i<50; i++){
+                const drop = document.createElement("div");
+                drop.className = "rain-drop";
+                drop.style.left = `${Math.random() * 100}%`;
+                drop.style.animationDelay = `${Math.random() * 2}s`;
+                drop.style.animationDuration = `${Math.random() * .5 + .5}s`;
+                animationContainer.appendChild(drop);
+            }
+        }
+        else if(condition === "Snow"){
+            for(let i = 0; i<50; i++){
+                const flake = document.createElement("div");
+                flake.className = "snowFlake";
+                flake.style.left = `${Math.random() * 100}%`;
+                flake.style.animationDelay = `${Math.random() * 10}s`;
+                flake.style.animationDuration = `${Math.random() * 5 + 5}s`;
+                flake.style.opacity = `${Math.random() * .5 + .3}`;
+                animationContainer.appendChild(flake);
+            }
+        }
+    };
 
     //for air quality index.
     const getAqiInfo = (aqi) => {
