@@ -3,22 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--Integration of the CSS file-->
     <link rel="stylesheet" href="styles.css">
+    <!--Integration of Tailwind CSS-->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!--Adding of Google Fonts-->
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <!--Integration of Font Awesome for icons.-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Weather Dashboard</title>
 </head>
-<body class="bg-gray-900 text-white">
+<body class="text-white">
     <div id="animation-container"></div>
     
+    <!--For the loading at the start-->
     <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50">
         <div class="text-center">
             <i class="fas fa-spinner fa-spin text-5xl mb-4 text-blue-400"></i>
             <p class="text-xl">Loading</p>
         </div>
-    </div> 
+    </div>
 
+    <!--For the error messages.-->
     <div id="error-modal" class="fixed inset-0 modal-bg flex items-center justify-center z-50 hidden">
         <div class="bg-red-900 border border-red-700 rounded-lg shadow-xl p-6 w-11/12 md:w-1/3 text-center">
             <h3 class="text-2xl font-bold mb-4">Oops! Something went wrong.</h3>
@@ -27,6 +33,7 @@
         </div>
     </div>
 
+    <!--For the search box-->
     <div class="min-h-screen w-full p-4 md:p-8 transition-opacity duration-500 opacity-0" id="weather-content">
         <div class="w-full max-w-2xl mx-auto mb-8 relative z-20">
             <form id="search-form" class="flex items-center bg-black/30 backdrop-blur-xl rounded-full shadow-ld border border-white/20">
@@ -36,29 +43,45 @@
                 </button>
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full transition-colors">Search</button>
             </form>
-            <div id="suggestions-box" class="absolute top-full mt-2 w-full bg-black/50 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg overflow-hidden hidden"></div>
+            <p id="search-error" class="text-red-400 text-center mt-2 text-sm hidden"></p>
+            <div id="suggestions-container" class="absolute top-full mt-2 w-full bg-black/50 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg overflow-hidden hidden">
+                <div id="recent-searches-box"></div>
+                <div id="suggestions-box"></div>
+            </div>
         </div>
 
+        <div id="weather-alert" class="w-full max-w-6xl mx-auto mb-4 p-4 rounded-2xl text-center font-bold hidden"></div>
+
+        <!--For displaying city and its other details.-->
         <main class="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8 relative z-10">
             <div class="lg:col-span-2 space-y-8">
-                <div class="p-6 md:p-8 rounded-3xl shadow-2xl card text-shadow flex flex-col md:flex-row items-center justify-center">
-                    <div class="text-center md:text-left ">
+                <div class="p-6 md:p-8 rounded-3xl shadow-2xl card text-shadow flex flex-col md:flex-row items-center justify-between">
+                    <div class="text-center md:text-left">
                         <h2 class="text-3xl sm:text-4xl md:text-5xl" id="city-name">City Name</h2>
                         <p class="text-base sm:text-lg text-gray-300" id="current-date">Monday, September 24</p>
                         <p class="text-lg sm:text-xl text-gray-200 font-medium" id="current-time">00:00:00 AM</p>
-                        <p class="text-6xl sm:text-7xl md:text-8xl font-bold mt-2 sm:mt-2" id="current-temp">0°</p>
-                        <p class="text-xl sm:text-2xl capitalize-mt-2" id="current-weather-desc">Weather</p>
+                        <div class="flex items-center justify-center md:justify-start gap-3 mt-2">
+                             <p class="text-6xl sm:text-7xl md:text-8xl font-bold" id="current-temp">0°</p>
+                             <div class="text-2xl mt-2">
+                                 <span id="temp-unit-c" class="cursor-pointer font-bold text-white">C</span>
+                                 <span class="text-gray-400">/</span>
+                                 <span id="temp-unit-f" class="cursor-pointer text-gray-400">F</span>
+                             </div>
+                        </div>
+                        <p class="text-xl sm:text-2xl capitalize mt-2" id="current-weather-desc">Weather</p>
                     </div>
-                    <img src="https://placehold.co/256x256/transparent/white?text=Icon" alt="weather-icon" class="w-32 h-32 sm:w-48 sm:h-48 md:w-64 md-:h-64 mt-6 md:mt-0" id="current-weather-icon">
+                    <img src="https://openweathermap.org/img/wn/10d@4x.png" alt="weather-icon" class="w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 mt-6 md:mt-0" id="current-weather-icon">
                 </div>
 
+                <!--For the 5-day weather forecsat.-->
                 <div>
-                    <h3 class="text-2xl font-bold mb-4 text-shadow">5-Day Forecast</h3>
+                    <h3 class="text-2xl font-bold mb-4 text-shadow">Five Day Forecast:</h3>
                     <div id="forecast-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4">
                     </div>
                 </div>
             </div>
 
+            <!--For displaying details like sunrise, set, humidity etc.-->
             <div class="flex flex-col">
                 <div class="p-6 rounded-2xl card backdrop-blur-xl flex-row flex flex-col space-y-5">
                     <div class="grid grid-cols-2 gap-6 text-center">
@@ -80,7 +103,6 @@
                             </span>
                             <span id="humidity" class="font-bold">- %</span>
                         </div>
-
                         <div class="flex justify-between items-center text-base lg:text-lg">
                             <span>
                                 <i class="fas fa-wind mr-3 text-gray-300"></i>
@@ -88,7 +110,6 @@
                             </span>
                             <span id="wind-speed" class="font-bold">- km/hr</span>
                         </div>
-
                         <div class="flex justify-between items-center text-base lg:text-lg">
                             <span>
                                 <i class="fas fa-thermometer mr-3 text-orange-300"></i>
@@ -96,7 +117,6 @@
                             </span>
                             <span id="feels-like" class="font-bold">- °</span>
                         </div>
-
                         <div class="flex justify-between items-center text-base lg:text-lg">
                             <span>
                                 <i class="fas fa-tachometer-alt mr-3 text-red-300"></i>
@@ -104,7 +124,6 @@
                             </span>
                             <span id="pressure" class="font-bold">- hPa</span>
                         </div>
-
                         <div class="flex justify-between items-center text-base lg:text-lg">
                             <span>
                                 <i class="fas fa-eye mr-3 text-green-300"></i>
@@ -112,7 +131,6 @@
                             </span>
                             <span id="visibility" class="font-bold">- km</span>
                         </div>
-
                         <div class="flex justify-between items-center text-base lg:text-lg">
                             <span>
                                 <i class="fas fa-smog mr-3 text-slate-300"></i>
@@ -121,7 +139,6 @@
                             <span id="air-quality" class="font-bold px-3 py-1 rounded-full text-sm">-</span>
                         </div>
                     </div>
-
                     <div class="border-t border-white/20 pt-5">
                         <h3 class="text-lg font-bold mb-2">Health Recommendation</h3>
                         <div id="health-recommendation">
@@ -133,6 +150,7 @@
         </main>
     </div>
 
+    <!--Integrration of the JavaScript file.-->
     <script src="app.js"></script>
 </body>
 </html>

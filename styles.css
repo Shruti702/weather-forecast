@@ -2,8 +2,9 @@
     box-sizing: border-box;
 }
 
-body{
+body {
     font-family: "Inter", sans-serif;
+    background-color: #111827; /* Added default background color */
     transition: background-image .5s ease-in-out;
     background-size: cover;
     background-position: center;
@@ -32,6 +33,7 @@ body{
     text-shadow: 2px 2px 5px rgba(0, 0, 0, .4);
 }
 
+/*Styling for the card-like elements.*/
 .card{
     background: linear-gradient(145deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, 0.05));
     border: 1px solid rgba(255, 255, 255, .2);
@@ -47,7 +49,6 @@ body{
     background-color: rgba(0, 0, 0, .7);
 }
 
-/*Adding styling to star, rain and snow animations.*/
 .star{
     position: absolute;
     background-color: white;
