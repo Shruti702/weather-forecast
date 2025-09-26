@@ -93,6 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const weatherData = await weatherResponse.json();
             const aqiData = await aqiResponse.json();
 
+            updateUI(weatherData, forecastData, aqiData);
 
         } catch (error) {
             console.error("Error while fetching the data: ", error);
@@ -140,10 +141,24 @@ document.addEventListener("DOMContentLoaded", () => {
         airQualityEl.className = `font-bold px-3 py-1 rounded-full text-sm ${aqiInfo.color}`;
         healthRecommendationEl.innerHTML = `<p class="text-gray-200 text-sm">${aqiInfo.recommendation}</p>`;
 
+        const dailyForcasts = processForeCast(forecast.list);
+        forecastContainer.innerHTML = "";
+        dailyForcasts.forEach(day => {
+            const card = document.createElement("div");
+            card.className = `p-4 rounded-2xl text-center card backdrop-blur-xl`;
+            card.innerHTML = `
+              <p class="font-bold text-lg">${new Date(day.dt_txt).toLocaleDateString("en-us", {weekday:"short"})}</p>
+              <img src="https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png" alt="${day.weather[0].description} class="w-16 h-16 mx-auto">
+              <p class="font-semibold">${Math.round(day.main.temps_max)}°/${Math.round(day.main.temps_min)}°</p>
+            `;
+            forecastContainer.appendChild(card);
+        });
     };
 
+    
+
     //for air quality index.
-    const getAquiInfo = (aqi) => {
+    const getAqiInfo = (aqi) => {
         switch(aqi){
             case 1: return{
                 text:"Good",
@@ -176,6 +191,35 @@ document.addEventListener("DOMContentLoaded", () => {
                 recommendation:"Air Quality data is unavailable."
             };
         }
+    };
+
+    //functionality for 5-day forecast
+    const processForeCast = (forecastList) => {
+        const dailyData = {};
+        forecastList.forEach(entry => {
+            const date = entry.dt_txt.split(' ')[0];
+            if(!dailyData[date]){
+                dailyData[date] = { temps_max: [], temps_min: [], icons: {}, entry:null};
+            }
+            dailyData[date].temps_max.push(entry.main.temps_max);
+            dailyData[date].temps_max.push(entry.main.temps_min);
+            const icon = entry.weather[0].icon;
+            dailyData[date].icons = (dailyData[date].icons[icon] || 0);
+            if(dailyData[date].entry || entry.dt_txt.includes("12:00:00")){
+                dailyData[date].entry = entry;
+            }
+        });
+
+        const processed = [];
+        for(const data in dailyData){
+            const day = dailyData[date];
+            const mostCommonIcon = Objects.keys(days.icons.reduce((a,b) => days.icon[a] > day.icons[b]? a : b));
+            day.entry.weather[0].icon = mostCommonIcon;
+            day.entry.main.temps_max = Math.max(...day.temps_max);
+            day.entry.main.temps_min = Math.max(...day.temps_min);
+            processed.push(day.entry);
+        }
+        return processed.slice(0, 5);
     };
 
     //for displaying the current time.
